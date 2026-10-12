@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Recorder Bounce - Visualizador MIDI</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
-    <meta name="theme-color" content="#9c6bf2">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png?v=2">
+    <meta name="theme-color" content="#7c3aed">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin.css');
@@ -132,6 +132,7 @@
         .welcome-screen.hidden { display:none; }
         body:not(.light) .welcome-screen { background:radial-gradient(ellipse at center,#1b132a 0%,#0a080e 70%); }
         body.light .welcome-screen { background:radial-gradient(ellipse at center,#dcd2ed 0%,#efeaf7 70%); }
+        body.light .wi-dark{display:none} body:not(.light) .wi-light{display:none}
         .welcome-icon { width:100px; height:100px; margin-bottom:18px; animation:float 3s ease-in-out infinite; }
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
         .welcome-screen h1 { font-size:24px; font-weight:700; background:linear-gradient(135deg,#642ac8,#9c6bf2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:7px; }
@@ -376,9 +377,21 @@
 <body>
 <header class="app-header">
     <div class="app-logo">
-        <svg viewBox="0 0 32 32" fill="none">
-            <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#lg)"/><rect x="13" y="5" width="6" height="22" rx="2" fill="#fff"/><circle cx="16" cy="11" r="1.4" fill="#6a4fd8"/><circle cx="16" cy="15" r="1.4" fill="#6a4fd8"/><circle cx="16" cy="19" r="1.4" fill="#6a4fd8"/><circle cx="16" cy="23" r="1.4" fill="#6a4fd8"/><defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#9c6bf2"/><stop offset="1" stop-color="#642ac8"/></linearGradient></defs>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#7c3aed"/><g transform="translate(20 20) rotate(40) scale(0.36)">
+<g transform="scale(1 1.5)"><path d="M -50 -2.6 L -44 -3.4 L -40.5 -5.4 L -36 -5.4 L 8 -4.8 L 40 -4.1 L 45 -5.6 L 50 -6.6 L 50 6.6 L 45 5.6 L 40 4.1 L 8 4.8 L -36 5.4 L -40.5 5.4 L -44 3.4 L -50 2.6 Z" fill="#ffffff" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M -31 -5.6 L -22 -5.6 L -22 -1.6 L -26 -1.6 Z" fill="#7c3aed"/>
+<rect x="-36.8" y="-5.6" width="1.6" height="11.2" fill="#7c3aed"/>
+<rect x="10.2" y="-5" width="1.6" height="10" fill="#7c3aed"/>
+<rect x="38.6" y="-4.4" width="1.6" height="8.8" fill="#7c3aed"/></g>
+<circle cx="-8" cy="0.2" r="2.4" fill="#7c3aed"/>
+<circle cx="0" cy="0.2" r="2.4" fill="#7c3aed"/>
+<circle cx="8" cy="0.2" r="2.4" fill="#7c3aed"/>
+<circle cx="20" cy="0.2" r="2.4" fill="#7c3aed"/>
+<circle cx="27" cy="0.2" r="2.4" fill="#7c3aed"/>
+<circle cx="34" cy="0.2" r="2.4" fill="#7c3aed"/>
+<circle cx="43" cy="0.2" r="2.1" fill="#7c3aed"/>
+<circle cx="-14" cy="-2.7" r="1.2" fill="#7c3aed"/>
+</g></svg>
         <span class="logo-name">Recorder Bounce</span>
         <span class="note-count-badge" id="noteCountBadge" style="display:none">0 notas</span>
     </div>
@@ -406,15 +419,64 @@
         <div class="canvas-container" id="canvasContainer">
             <canvas id="mainCanvas"></canvas>
             <div class="welcome-screen" id="welcomeScreen">
-                <svg class="welcome-icon" viewBox="0 0 120 120" fill="none">
-                    <circle cx="60" cy="60" r="55" fill="url(#wg)" opacity="0.15"/>
-                    <circle cx="60" cy="60" r="40" fill="url(#wg)" opacity="0.1"/>
-                    <rect x="56" y="16" width="8" height="40" rx="3" fill="#9c6bf2"/><circle cx="60" cy="15" r="7" fill="#9c6bf2"/>
-                    <ellipse cx="60" cy="58" rx="18" ry="16" fill="#9c6bf2"/><ellipse cx="60" cy="84" rx="26" ry="21" fill="#9c6bf2"/>
-                    <path d="M45 78 q-3 7 0 14 M75 78 q3 7 0 14" stroke="#3b177a" stroke-width="4" fill="none" stroke-linecap="round"/>
-                    <line x1="60" y1="30" x2="60" y2="96" stroke="#3b177a" stroke-width="2"/>
-                    <defs><linearGradient id="wg" x1="0" y1="0" x2="120" y2="120"><stop stop-color="#9c6bf2"/><stop offset="1" stop-color="#642ac8"/></linearGradient></defs>
-                </svg>
+                <svg class="welcome-icon wi-dark" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="58" fill="#2a1c47"/>
+  <circle cx="60" cy="60" r="40" fill="#3a2766"/>
+  <g class="recorder-anim">
+<g transform="translate(60 60) rotate(-48) scale(0.9)">
+<g transform="scale(1 1.4)"><path d="M -50 -2.6 L -44 -3.4 L -40.5 -5.4 L -36 -5.4 L 8 -4.8 L 40 -4.1 L 45 -5.6 L 50 -6.6 L 50 6.6 L 45 5.6 L 40 4.1 L 8 4.8 L -36 5.4 L -40.5 5.4 L -44 3.4 L -50 2.6 Z" fill="#a06cff" stroke="#a06cff" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M -31 -5.6 L -22 -5.6 L -22 -1.6 L -26 -1.6 Z" fill="#3a2766"/>
+<rect x="-36.8" y="-5.6" width="1.6" height="11.2" fill="#3a2766"/>
+<rect x="10.2" y="-5" width="1.6" height="10" fill="#3a2766"/>
+<rect x="38.6" y="-4.4" width="1.6" height="8.8" fill="#3a2766"/></g>
+<circle cx="-8" cy="0.2" r="2.4" fill="#3a2766"/>
+<circle cx="0" cy="0.2" r="2.4" fill="#3a2766"/>
+<circle cx="8" cy="0.2" r="2.4" fill="#3a2766"/>
+<circle cx="20" cy="0.2" r="2.4" fill="#3a2766"/>
+<circle cx="27" cy="0.2" r="2.4" fill="#3a2766"/>
+<circle cx="34" cy="0.2" r="2.4" fill="#3a2766"/>
+<circle cx="43" cy="0.2" r="2.1" fill="#3a2766"/>
+<circle cx="-14" cy="-2.7" r="1.2" fill="#3a2766"/>
+</g>
+  </g>
+  <g fill="#a06cff" font-family="serif" font-size="13" font-weight="700">
+    <text x="92" y="42" opacity="0"><tspan>&#9834;</tspan>
+      <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 6;4 -8" dur="3s" repeatCount="indefinite"/></text>
+    <text x="100" y="62" opacity="0" font-size="10"><tspan>&#9835;</tspan>
+      <animate attributeName="opacity" values="0;1;0" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 6;4 -8" dur="3s" begin="1.2s" repeatCount="indefinite"/></text>
+  </g>
+</svg>
+                <svg class="welcome-icon wi-light" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="58" fill="#ede4ff"/>
+  <circle cx="60" cy="60" r="40" fill="#dccbff"/>
+  <g class="recorder-anim">
+<g transform="translate(60 60) rotate(-48) scale(0.9)">
+<g transform="scale(1 1.4)"><path d="M -50 -2.6 L -44 -3.4 L -40.5 -5.4 L -36 -5.4 L 8 -4.8 L 40 -4.1 L 45 -5.6 L 50 -6.6 L 50 6.6 L 45 5.6 L 40 4.1 L 8 4.8 L -36 5.4 L -40.5 5.4 L -44 3.4 L -50 2.6 Z" fill="#7c3aed" stroke="#7c3aed" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M -31 -5.6 L -22 -5.6 L -22 -1.6 L -26 -1.6 Z" fill="#dccbff"/>
+<rect x="-36.8" y="-5.6" width="1.6" height="11.2" fill="#dccbff"/>
+<rect x="10.2" y="-5" width="1.6" height="10" fill="#dccbff"/>
+<rect x="38.6" y="-4.4" width="1.6" height="8.8" fill="#dccbff"/></g>
+<circle cx="-8" cy="0.2" r="2.4" fill="#dccbff"/>
+<circle cx="0" cy="0.2" r="2.4" fill="#dccbff"/>
+<circle cx="8" cy="0.2" r="2.4" fill="#dccbff"/>
+<circle cx="20" cy="0.2" r="2.4" fill="#dccbff"/>
+<circle cx="27" cy="0.2" r="2.4" fill="#dccbff"/>
+<circle cx="34" cy="0.2" r="2.4" fill="#dccbff"/>
+<circle cx="43" cy="0.2" r="2.1" fill="#dccbff"/>
+<circle cx="-14" cy="-2.7" r="1.2" fill="#dccbff"/>
+</g>
+  </g>
+  <g fill="#7c3aed" font-family="serif" font-size="13" font-weight="700">
+    <text x="92" y="42" opacity="0"><tspan>&#9834;</tspan>
+      <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 6;4 -8" dur="3s" repeatCount="indefinite"/></text>
+    <text x="100" y="62" opacity="0" font-size="10"><tspan>&#9835;</tspan>
+      <animate attributeName="opacity" values="0;1;0" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 6;4 -8" dur="3s" begin="1.2s" repeatCount="indefinite"/></text>
+  </g>
+</svg>
                 <h1>Recorder Bounce</h1>
                 <p>Carregue um arquivo MIDI ou crie sua própria partitura</p>
                 <div class="welcome-btns">
