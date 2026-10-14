@@ -1,0 +1,11 @@
+node_modules/
+www/
+android/
+capacitor.config.json
+chave/
+*.keystore
+*.jks
+*.b64
+*.apk
+*.aab
+samples-src/
