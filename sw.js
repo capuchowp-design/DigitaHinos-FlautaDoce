@@ -1,5 +1,5 @@
-// Mude este número a CADA publicação nova no GitHub (v2 -> v3 -> v4...)
-const CACHE_NAME = 'recorder-bounce-v2';
+// Mude este número a CADA publicação nova no GitHub (v3 -> v4 -> v5...)
+const CACHE_NAME = 'recorder-bounce-v3';
 const CORE = ['./', './index.html', './manifest.json'];
 const EXTRA = [
   './icon-192x192.png?v=2', './icon-512x512.png?v=2', './icon-maskable-192x192.png?v=2', './icon-maskable-512x512.png?v=2', './apple-touch-icon.png?v=2', './favicon-32x32.png?v=2',

@@ -342,6 +342,10 @@
         .pb-sheet.wide { width:min(920px,100%); height:calc(100dvh - 24px); }
         .pb-head { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border-main); flex-shrink:0; }
         .pb-head h2 { font-size:16px; margin:0; }
+        .hino-item { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:10px 12px; margin:0 0 6px; background:var(--bg-btn); color:var(--text-main); border:1px solid var(--border-btn); border-radius:10px; cursor:pointer; font:500 14px Inter,sans-serif; }
+        .hino-item:hover { border-color:#9c6bf2; }
+        .hino-item b { min-width:42px; color:#9c6bf2; font-weight:800; }
+        #voiceSel { max-width:170px; }
         .pb-x { background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; padding:2px 8px; }
         .pb-body { padding:14px 16px 16px; overflow:auto; flex:1; min-height:0; }
         .pb-sec { margin-bottom:16px; }
@@ -404,11 +408,12 @@
         </button>
         <div class="synth-badge" id="synthBadge"><span class="dot"></span>Carregando…</div>
         <span class="file-name" id="fileName"></span>
+        <button class="tab-btn" id="hinosBtn" title="Biblioteca de hinos">📖 <span>Hinos</span></button>
         <button class="theme-btn" id="themeBtn" title="Alternar modo claro/escuro">🌙</button>
         <label class="file-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Abrir MIDI
-            <input type="file" id="fileInput" accept=".mid,.midi">
+            Abrir partitura
+            <input type="file" id="fileInput" accept=".mid,.midi,.mxl,.xml,.musicxml">
         </label>
     </div>
 </header>
@@ -478,10 +483,10 @@
   </g>
 </svg>
                 <h1>Recorder Bounce</h1>
-                <p>Carregue um arquivo MIDI ou crie sua própria partitura</p>
+                <p>Carregue um arquivo MIDI ou MusicXML (.mxl/.xml), abra um hino ou crie sua própria partitura</p>
                 <div class="welcome-btns">
-                    <label class="welcome-upload" for="welcomeFileInput">Carregar MIDI
-                        <input type="file" id="welcomeFileInput" accept=".mid,.midi" style="display:none">
+                    <label class="welcome-upload" for="welcomeFileInput">Carregar partitura
+                        <input type="file" id="welcomeFileInput" accept=".mid,.midi,.mxl,.xml,.musicxml" style="display:none">
                     </label>
                     <button class="welcome-compose" onclick="switchView('score')">✏ Compor</button>
                 </div>
@@ -517,7 +522,7 @@
             <div class="drop-overlay" id="dropOverlay">
                 <div class="drop-message">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <p>Solte o arquivo MIDI aqui</p>
+                    <p>Solte a partitura aqui (MIDI ou MusicXML)</p>
                 </div>
             </div>
             <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
@@ -541,6 +546,10 @@
             <span class="time-display" id="currentTime">0:00</span>
             <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
             <span class="time-display" id="totalTime">0:00</span>
+        </div>
+        <div class="speed-control" id="voiceCtl" style="display:none" title="Nos hinos a 4 vozes, cada voz é levada para o alcance da flauta doce (Dó5 a Ré7)">
+            <span>Voz:</span>
+            <select id="voiceSel" aria-label="Voz a executar"></select>
         </div>
         <div class="speed-control">
             <span>Vel:</span>
@@ -693,7 +702,7 @@
     </div>
 </div>
 
-<input type="file" id="pbFile" accept=".mid,.midi,.json,application/json" hidden>
+<input type="file" id="pbFile" accept=".mid,.midi,.mxl,.xml,.musicxml,.json,application/json" hidden>
 
 <div class="pb-modal" id="mProj" hidden>
   <div class="pb-sheet">
@@ -719,7 +728,7 @@
       </div>
       <div class="pb-sec">
         <h3>Importar</h3>
-        <div class="pb-row"><button class="score-action-btn secondary" id="pbImport">⬆ Importar MIDI ou projeto (.json)</button></div>
+        <div class="pb-row"><button class="score-action-btn secondary" id="pbImport">⬆ Importar MIDI, MusicXML (.mxl/.xml) ou projeto (.json)</button></div>
       </div>
     </div>
   </div>
@@ -752,9 +761,19 @@
   </div>
 </div>
 
+<div class="pb-modal" id="mHinos" hidden>
+  <div class="pb-sheet wide">
+    <div class="pb-head"><h2>Hinos</h2><button class="pb-x" data-close>✕</button></div>
+    <div class="pb-body">
+      <input type="search" id="hinoQ" placeholder="Buscar por número ou título…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border-main);background:var(--bg-btn);color:var(--text-main);font:600 14px Inter,sans-serif;margin-bottom:10px">
+      <div id="hinoList"></div>
+    </div>
+  </div>
+</div>
+
 <div class="pb-modal" id="mImp" hidden>
   <div class="pb-sheet">
-    <div class="pb-head"><h2>Importar MIDI</h2><button class="pb-x" data-close>✕</button></div>
+    <div class="pb-head"><h2>Importar partitura</h2><button class="pb-x" data-close>✕</button></div>
     <div class="pb-body">
       <div class="pb-fine" id="impInfo" style="margin:0 0 12px"></div>
       <div class="pb-grid">
@@ -766,7 +785,7 @@
         </label>
       </div>
       <label class="pb-chk"><input type="checkbox" id="impTempo" checked> Usar o andamento (BPM) do arquivo</label>
-      <div class="pb-fine">Cada faixa do arquivo vira uma voz (até 8).</div>
+      <div class="pb-fine">Cada faixa/voz do arquivo vira uma voz (até 8). Em partituras SATB: Soprano, Contralto, Tenor e Baixo.</div>
       <div class="pb-row" style="margin-top:14px"><button class="score-action-btn primary" id="impGo">Importar</button><button class="score-action-btn secondary" data-close>Cancelar</button></div>
     </div>
   </div>
@@ -775,6 +794,263 @@
 <div class="error-toast" id="errorToast"></div>
 <div class="success-toast" id="successToast"></div>
 
+<script>
+/* ======================== MUSICXML (.xml / .musicxml / .mxl) ======================== */
+const SATB_NAMES=['Soprano','Contralto','Tenor','Baixo'];
+
+// ---- ZIP: o .mxl é um ZIP com o XML da partitura dentro ----
+function zipEntries(buf){
+    const u8=new Uint8Array(buf), dv=new DataView(buf);
+    let e=u8.length-22; while(e>=0&&dv.getUint32(e,true)!==0x06054b50) e--;
+    if(e<0) throw new Error('Arquivo .mxl inválido');
+    const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const out=[];
+    for(let i=0;i<n;i++){
+        if(dv.getUint32(p,true)!==0x02014b50) break;
+        const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), usize=dv.getUint32(p+24,true);
+        const nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lho=dv.getUint32(p+42,true);
+        out.push({name:new TextDecoder().decode(u8.subarray(p+46,p+46+nl)),method,csize,usize,lho});
+        p+=46+nl+el+cl;
+    }
+    return {u8,dv,out};
+}
+async function zipRead(z,ent){
+    const {u8,dv}=z, p=ent.lho, start=p+30+dv.getUint16(p+26,true)+dv.getUint16(p+28,true);
+    const data=u8.subarray(start,start+ent.csize);
+    if(ent.method===0) return data;
+    if(ent.method!==8) throw new Error('Compressão não suportada');
+    if(typeof DecompressionStream==='function'){
+        try{ const r=new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))); return new Uint8Array(await r.arrayBuffer()); }catch(e){}
+    }
+    return inflateRaw(data,ent.usize);
+}
+// descompactador próprio (reserva, para WebViews antigos sem DecompressionStream)
+function inflateRaw(src,usize){
+    const LB=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258],
+          LE=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],
+          DB=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],
+          DE=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13],
+          ORD=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+    let out=new Uint8Array(usize||src.length*4), op=0, ip=0, bit=0, bc=0;
+    const grow=n=>{ if(op+n>out.length){ const t=new Uint8Array(Math.max(out.length*2,op+n)); t.set(out); out=t; } };
+    const bits=n=>{ while(bc<n){ bit|=src[ip++]<<bc; bc+=8; } const v=bit&((1<<n)-1); bit>>>=n; bc-=n; return v; };
+    const build=lens=>{ const count=new Uint16Array(16), symbol=new Uint16Array(lens.length), offs=new Uint16Array(16);
+        for(let i=0;i<lens.length;i++) count[lens[i]]++; count[0]=0;
+        for(let i=1;i<16;i++) offs[i]=offs[i-1]+count[i-1];
+        for(let s=0;s<lens.length;s++) if(lens[s]) symbol[offs[lens[s]]++]=s;
+        return {count,symbol}; };
+    const decode=h=>{ let code=0,first=0,index=0; for(let len=1;len<16;len++){ code|=bits(1); const c=h.count[len]; if(code-c<first) return h.symbol[index+(code-first)]; index+=c; first+=c; first<<=1; code<<=1; } throw new Error('inflate'); };
+    let last;
+    do{
+        last=bits(1); const type=bits(2);
+        if(type===0){ bit=0; bc=0; const len=src[ip]|(src[ip+1]<<8); ip+=4; grow(len); out.set(src.subarray(ip,ip+len),op); op+=len; ip+=len; }
+        else if(type===3) throw new Error('inflate');
+        else{
+            let lh,dh;
+            if(type===1){ const l=new Uint8Array(288); for(let i=0;i<288;i++) l[i]=i<144?8:i<256?9:i<280?7:8; lh=build(l); dh=build(new Uint8Array(30).fill(5)); }
+            else{
+                const nl=bits(5)+257, nd=bits(5)+1, nc=bits(4)+4, cl=new Uint8Array(19);
+                for(let i=0;i<nc;i++) cl[ORD[i]]=bits(3);
+                const ch=build(cl), lens=new Uint8Array(nl+nd); let i=0;
+                while(i<nl+nd){ const s=decode(ch); if(s<16) lens[i++]=s; else{ let rep,val=0; if(s===16){ val=lens[i-1]; rep=3+bits(2); } else if(s===17) rep=3+bits(3); else rep=11+bits(7); while(rep--) lens[i++]=val; } }
+                lh=build(lens.subarray(0,nl)); dh=build(lens.subarray(nl));
+            }
+            for(;;){
+                const s=decode(lh);
+                if(s<256){ grow(1); out[op++]=s; }
+                else if(s===256) break;
+                else{ const li=s-257, len=LB[li]+bits(LE[li]), ds=decode(dh), dist=DB[ds]+bits(DE[ds]); grow(len); for(let k=0;k<len;k++){ out[op]=out[op-dist]; op++; } }
+            }
+        }
+    }while(!last);
+    return out.subarray(0,op);
+}
+function decodeXml(u8){
+    if(u8[0]===0xFF&&u8[1]===0xFE) return new TextDecoder('utf-16le').decode(u8);
+    if(u8[0]===0xFE&&u8[1]===0xFF) return new TextDecoder('utf-16be').decode(u8);
+    let enc='utf-8'; const m=/encoding\s*=\s*["']([\w-]+)/i.exec(String.fromCharCode.apply(null,u8.subarray(0,200)));
+    if(m) enc=m[1];
+    try{ return new TextDecoder(enc).decode(u8).replace(/^\uFEFF/,''); }catch(e){ return new TextDecoder('utf-8').decode(u8).replace(/^\uFEFF/,''); }
+}
+async function readScoreXmlText(buf){
+    const u8=new Uint8Array(buf);
+    if(u8[0]===0x50&&u8[1]===0x4B){
+        const z=zipEntries(buf); let target=null;
+        const cont=z.out.find(e=>/^META-INF\/container\.xml$/i.test(e.name));
+        if(cont){ const m=/full-path\s*=\s*["']([^"']+)["']/.exec(decodeXml(await zipRead(z,cont))); if(m) target=z.out.find(e=>e.name===m[1]); }
+        if(!target) target=z.out.find(e=>/\.(xml|musicxml)$/i.test(e.name)&&!/^META-INF\//i.test(e.name));
+        if(!target) throw new Error('Nenhuma partitura dentro do .mxl');
+        return decodeXml(await zipRead(z,target));
+    }
+    return decodeXml(u8);
+}
+
+// ---- MusicXML (partwise) → notas {midi,startTime,endTime,duration,velocity,track} ----
+function parseMusicXML(text){
+    const doc=new DOMParser().parseFromString(text,'application/xml');
+    if(doc.getElementsByTagName('parsererror').length) throw new Error('XML inválido');
+    const root=doc.documentElement;
+    if(root.nodeName==='score-timewise') throw new Error('MusicXML "timewise" não suportado — exporte como "partwise"');
+    if(root.nodeName!=='score-partwise') throw new Error('Não é um arquivo MusicXML');
+    const ch=(el,n)=>{ const r=[]; for(const c of el.children) if(c.nodeName===n) r.push(c); return r; };
+    const c1=(el,n)=>{ for(const c of el.children) if(c.nodeName===n) return c; return null; };
+    const tx=(el,n)=>{ const c=el&&c1(el,n); return c?c.textContent.trim():''; };
+    const nm=(el,n,d)=>{ const v=parseFloat(tx(el,n)); return isFinite(v)?v:d; };
+    const STEP={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+    const DYN={ppp:.3,pp:.4,p:.5,mp:.6,mf:.7,f:.8,ff:.9,fff:.97,sf:.9,sfz:.9,fp:.8};
+    const pnames={}; const pl=c1(root,'part-list');
+    if(pl) ch(pl,'score-part').forEach(sp=>{ pnames[sp.getAttribute('id')]=tx(sp,'part-name')||tx(sp,'part-abbreviation'); });
+    const parts=ch(root,'part'), MI=[], evs=[];
+    const tempoOf=e=>{
+        const snd=e.nodeName==='sound'?e:c1(e,'sound');
+        if(snd&&snd.getAttribute('tempo')) return parseFloat(snd.getAttribute('tempo'));
+        const met=e.getElementsByTagName('metronome')[0];
+        if(met){ const pm=parseFloat(tx(met,'per-minute')); if(pm>0){ let q={whole:4,half:2,quarter:1,eighth:.5,'16th':.25}[tx(met,'beat-unit')]||1; if(c1(met,'beat-unit-dot')) q*=1.5; return pm*q; } }
+        return 0;
+    };
+    parts.forEach((part,pi)=>{
+        let div=1,beats=4,bt=4,trans=0,vel=.7;
+        ch(part,'measure').forEach((m,mi)=>{
+            const info=MI[mi]||(MI[mi]={ext:0,nom:4,fwd:false,bwd:false,volta:null,tempos:[],implicit:false});
+            if(m.getAttribute('implicit')==='yes') info.implicit=true;
+            let cur=0,lastOn=0,ext=0;
+            for(const e of m.children){
+                const t=e.nodeName;
+                if(t==='attributes'){
+                    const d=nm(e,'divisions',0); if(d>0) div=d;
+                    const ti=c1(e,'time'); if(ti){ beats=parseInt(tx(ti,'beats'))||beats; bt=parseInt(tx(ti,'beat-type'))||bt; if(!info.time) info.time=beats+'/'+bt; }
+                    const k=c1(e,'key'); if(k&&info.fifths===undefined){ const f=parseInt(tx(k,'fifths')); if(isFinite(f)) info.fifths=f; }
+                    const tr=c1(e,'transpose'); if(tr) trans=(parseInt(tx(tr,'chromatic'))||0)+12*(parseInt(tx(tr,'octave-change'))||0);
+                } else if(t==='direction'||t==='sound'){
+                    const bpm=tempoOf(e); if(bpm>0&&pi===0) info.tempos.push({pos:cur/div,bpm});
+                    if(t==='direction'){ const dy=e.getElementsByTagName('dynamics')[0]; if(dy) for(const d of dy.children) if(DYN[d.nodeName]) vel=DYN[d.nodeName]; }
+                } else if(t==='backup') cur-=nm(e,'duration',0);
+                else if(t==='forward'){ cur+=nm(e,'duration',0); ext=Math.max(ext,cur); }
+                else if(t==='barline'){
+                    const rp=c1(e,'repeat'); if(rp){ if(rp.getAttribute('direction')==='forward') info.fwd=true; else info.bwd=true; }
+                    const en=c1(e,'ending'); if(en){ if(en.getAttribute('type')==='start') info.endStart=(en.getAttribute('number')||'1').split(/[ ,]+/).map(s=>parseInt(s)).filter(x=>x>0); else info.endStop=true; }
+                } else if(t==='note'){
+                    if(c1(e,'grace')) continue;
+                    const isChord=!!c1(e,'chord'), dur=nm(e,'duration',0), on=isChord?lastOn:cur;
+                    if(!isChord) lastOn=cur;
+                    const pitch=c1(e,'pitch');
+                    if(pitch&&!c1(e,'rest')&&!c1(e,'cue')&&dur>0&&STEP[tx(pitch,'step')]!==undefined){
+                        const midi=STEP[tx(pitch,'step')]+Math.round(nm(pitch,'alter',0))+(parseInt(tx(pitch,'octave'))+1)*12+trans;
+                        let ties=ch(e,'tie').map(x=>x.getAttribute('type'));
+                        if(!ties.length){ const nt=c1(e,'notations'); if(nt) ties=ch(nt,'tied').map(x=>x.getAttribute('type')); }
+                        evs.push({part:pi,staff:parseInt(tx(e,'staff'))||1,voice:parseInt(tx(e,'voice'))||1,midi,mi,on:on/div,dur:dur/div,tS:ties.includes('start'),tE:ties.includes('stop'),vel,stem:tx(e,'stem')});
+                    }
+                    if(!isChord) cur+=dur;
+                    ext=Math.max(ext,cur);
+                }
+            }
+            info.ext=Math.max(info.ext,ext/div); info.nom=beats*4/bt;
+        });
+    });
+    const n=MI.length; if(!n) throw new Error('Nenhum compasso encontrado');
+    const len=MI.map(m=>m.ext>1e-6?m.ext:m.nom);
+    let open=null; MI.forEach(m=>{ if(m.endStart) open=m.endStart; m.volta=open; if(m.endStop) open=null; });
+    // ordem de execução (repetições e casas 1ª/2ª)
+    const order=[]; { let i=0,secStart=0,pass=1,jumped=false,guard=0; const taken=new Set();
+        while(i<n&&guard++<n*12){
+            const m=MI[i];
+            if(m.fwd&&!(jumped&&i===secStart)){ secStart=i; pass=1; }
+            jumped=false;
+            if(m.volta&&!m.volta.includes(pass)){ i++; continue; }
+            order.push(i);
+            if(m.bwd){ if(!taken.has(i)){ taken.add(i); i=secStart; pass++; jumped=true; continue; } secStart=i+1; pass=1; }
+            i++;
+        } }
+    if(!order.length) for(let i=0;i<n;i++) order.push(i);
+    const byM=Array.from({length:n},()=>[]); evs.forEach(e=>byM[e.mi].push(e));
+    let acc=0, abs=[], tempos=[];
+    order.forEach(mi=>{
+        MI[mi].tempos.forEach(t=>tempos.push({q:acc+t.pos,bpm:t.bpm}));
+        byM[mi].forEach(e=>abs.push({...e,s:acc+e.on,e:acc+e.on+e.dur}));
+        acc+=len[mi];
+    });
+    tempos.sort((a,b)=>a.q-b.q);
+    if(!tempos.length||tempos[0].q>0) tempos.unshift({q:0,bpm:tempos.length?tempos[0].bpm:120});
+    const tm=[]; let sec=0;
+    tempos.forEach((t,i)=>{ if(i>0){ const p=tempos[i-1]; sec+=(t.q-p.q)*60/p.bpm; } tm.push({q:t.q,s:sec,bpm:t.bpm}); });
+    const toSec=q=>{ let k=tm.length-1; while(k>0&&tm[k].q>q+1e-9) k--; return tm[k].s+(q-tm[k].q)*60/tm[k].bpm; };
+    // ligaduras de prolongamento
+    abs.sort((a,b)=>a.s-b.s);
+    const pend=new Map(), merged=[];
+    abs.forEach(x=>{
+        const k=x.part+'|'+x.staff+'|'+x.voice+'|'+x.midi, p=pend.get(k);
+        if(x.tE&&p&&Math.abs(p.e-x.s)<.06){ p.e=x.e; if(!x.tS) pend.delete(k); return; }
+        const nn={part:x.part,staff:x.staff,voice:x.voice,midi:x.midi,s:x.s,e:x.e,vel:x.vel,stem:x.stem};
+        merged.push(nn); if(x.tS) pend.set(k,nn); else pend.delete(k);
+    });
+    // ---- Reconhecimento SATB pela pauta (como nos hinários) ----
+    // pauta de cima: soprano (nota de cima / haste para cima) e contralto (nota de baixo / haste para baixo)
+    // pauta de baixo: tenor (nota de cima / haste para cima) e baixo (nota de baixo / haste para baixo)
+    const GR=new Map(); merged.forEach(x=>{ const k=x.part+'|'+x.staff; if(!GR.has(k)) GR.set(k,{part:x.part,staff:x.staff,notes:[]}); GR.get(k).notes.push(x); });
+    const grp=[...GR.values()].sort((a,b)=>a.part-b.part||a.staff-b.staff);
+    const avgN=ns=>ns.reduce((a,x)=>a+x.midi,0)/ns.length;
+    const splitStaff=g=>{
+        const vs=[...new Set(g.notes.map(x=>x.voice))].sort((a,b)=>a-b), topV=vs[0];
+        const byOn=new Map(); g.notes.forEach(x=>{ const k=x.s.toFixed(3); if(!byOn.has(k)) byOn.set(k,[]); byOn.get(k).push(x); });
+        const up=[], dn=[], sr=x=>x.stem==='up'?0:x.stem==='down'?2:1;
+        byOn.forEach(a=>{
+            if(a.length>=2){
+                a.sort((p,q)=>q.midi-p.midi||sr(p)-sr(q)||p.voice-q.voice);
+                a.forEach((x,i)=>{ if(i===0) up.push(x); else if(i===a.length-1) dn.push(x); else (x.stem==='down'?dn:up).push(x); });
+            } else {
+                const x=a[0];
+                if(x.stem==='double'){ up.push(x); dn.push({...x,dup:true}); }
+                else if(x.stem==='down') dn.push(x);
+                else if(x.stem==='up') up.push(x);
+                else (vs.length>1&&x.voice!==topV?dn:up).push(x);   // sem haste: voz 1 = cima, demais = baixo; nota única = cima
+            }
+        });
+        return [up,dn];
+    };
+    let lines, voiceNames, byStaff=false;
+    if(grp.length===2){
+        if(avgN(grp[1].notes)>avgN(grp[0].notes)) grp.reverse();
+        lines=[...splitStaff(grp[0]),...splitStaff(grp[1])].map((ns,i)=>({part:0,staff:i,voice:i,notes:ns}));
+        voiceNames=SATB_NAMES.slice(); byStaff=true;
+    }
+    if(!byStaff){
+    // linhas melódicas = (parte, pauta, voz)
+    const L=new Map(); merged.forEach(x=>{ const k=x.part+'|'+x.staff+'|'+x.voice; if(!L.has(k)) L.set(k,{part:x.part,staff:x.staff,voice:x.voice,notes:[]}); L.get(k).notes.push(x); });
+    lines=[...L.values()].sort((a,b)=>a.part-b.part||a.staff-b.staff||a.voice-b.voice);
+    if(!lines.length) throw new Error('Nenhuma nota encontrada');
+    const perPart={}; lines.forEach(l=>perPart[l.part]=(perPart[l.part]||0)+1);
+    if(lines.length<4){ // acordes dentro de uma voz (ex.: soprano+contralto na mesma pauta) → separa por altura
+        lines=lines.flatMap(l=>{
+            const g=new Map(); l.notes.forEach(x=>{ const k=x.s.toFixed(3); if(!g.has(k)) g.set(k,[]); g.get(k).push(x); });
+            const mx=Math.min(4,Math.max(...[...g.values()].map(a=>a.length)));
+            if(mx<=1) return [l];
+            const subs=Array.from({length:mx},()=>({part:l.part,staff:l.staff,voice:l.voice,notes:[],split:true}));
+            g.forEach(a=>{ a.sort((p,q)=>q.midi-p.midi); subs.forEach((s,r)=>s.notes.push({...a[Math.min(r,a.length-1)],dup:r>=a.length})); });
+            return subs;
+        });
+    }
+    const avg=l=>l.notes.reduce((a,x)=>a+x.midi,0)/l.notes.length;
+    const cls=s=>{ s=(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); return /sopran/.test(s)?0:/contralt|alto/.test(s)||/^a\.?$/.test(s)?1:/tenor/.test(s)||/^t\.?$/.test(s)?2:/bass|baix/.test(s)||/^b\.?$/.test(s)?3:-1; };
+        if(lines.length===4){
+        const cs=lines.map(l=>perPart[l.part]===1&&!l.split?cls(pnames[parts[l.part].getAttribute('id')]):-1);
+        if(cs.every(c=>c>=0)&&new Set(cs).size===4) lines=cs.map((c,i)=>[c,lines[i]]).sort((a,b)=>a[0]-b[0]).map(a=>a[1]);
+        else lines.sort((a,b)=>avg(b)-avg(a));
+        voiceNames=SATB_NAMES.slice();
+    } else {
+        lines.sort((a,b)=>avg(b)-avg(a));
+        if(lines.length>8){ const extra=lines.splice(7); extra.forEach(l=>lines[6].notes.push(...l.notes)); }
+        voiceNames=lines.map((_,i)=>'Voz '+(i+1));
+    }
+    }
+    const notes=[];
+    lines.forEach((l,v)=>l.notes.forEach(x=>{ const a=toSec(x.s), b=toSec(x.e); if(b-a>.01) notes.push({midi:Math.max(0,Math.min(127,x.midi)),startTime:a,endTime:b,duration:b-a,velocity:x.vel,track:v,dup:!!x.dup}); }));
+    notes.sort((a,b)=>a.startTime-b.startTime);
+    if(!notes.length) throw new Error('Nenhuma nota encontrada');
+    const first=f=>{ const m=MI.find(x=>x[f]!==undefined); return m?m[f]:null; };
+    return {notes,duration:Math.max(...notes.map(x=>x.endTime)),bpm:tm[0].bpm,key:first('fifths'),timeSig:first('time'),voiceNames};
+}
+function isMidiBuf(buf){ const u=new Uint8Array(buf,0,Math.min(4,buf.byteLength)); return u[0]===0x4D&&u[1]===0x54&&u[2]===0x68&&u[3]===0x64; }
+async function parseAnyScore(buf){ return isMidiBuf(buf)?parseMidiFile(buf):parseMusicXML(await readScoreXmlText(buf)); }
+</script>
 <script>
 // ======================== VIEW SWITCHING ========================
 function switchView(v) {
@@ -858,7 +1134,7 @@ const state={
     totalNotes:0, animFrameId:null,
     pausedAt:0,
     sampler:null, samplerReady:false, piano:null, synth:null,
-    midiLoaded:false,
+    midiLoaded:false, voiceSel:"all", voiceIds:[], voiceNames:[], shiftIds:[], shiftBy:{},
     pps:200  // pixels per second
 };
 
@@ -1009,27 +1285,90 @@ function resizeCanvases(){
 window.addEventListener('resize',()=>{ resizeCanvases(); if(state.midiLoaded) drawScene(); });
 
 // ======================== MIDI LOADING ========================
+async function loadBuffer(buf,name){
+    loadingOverlay.classList.add('active');
+    fileNameEl.textContent=name;
+    try {
+        const parsed=await parseAnyScore(buf);
+        if(!parsed.notes.length) throw new Error('Nenhuma nota encontrada');
+        state.voiceSel='all';
+        await applyNotes(parsed.notes, parsed.duration, parsed.voiceNames, {satbDown:!!parsed.voiceNames});
+        toast(`Carregado! ${state.totalNotes} notas`, 'success');
+    } catch(err){ toast('Erro: '+err.message); state.midiLoaded=false; }
+    loadingOverlay.classList.remove('active');
+}
 function loadMidiFile(file){
     if(!file) return;
-    loadingOverlay.classList.add('active');
-    fileNameEl.textContent=file.name;
     const reader=new FileReader();
-    reader.onload=async e=>{
-        try {
-            const parsed=parseMidiFile(e.target.result);
-            if(!parsed.notes.length) throw new Error('Nenhuma nota encontrada');
-            applyNotes(parsed.notes, parsed.duration);
-            toast(`Carregado! ${state.totalNotes} notas`, 'success');
-        } catch(err){ toast('Erro: '+err.message); state.midiLoaded=false; }
-        loadingOverlay.classList.remove('active');
-    };
-    reader.onerror=()=>{ loadingOverlay.classList.remove('active'); toast('Erro ao ler arquivo'); };
+    reader.onload=e=>loadBuffer(e.target.result,file.name);
+    reader.onerror=()=>toast('Erro ao ler arquivo');
     reader.readAsArrayBuffer(file);
 }
 
-async function applyNotes(notes, duration){
+// ---- seleção de voz (Todas / Soprano / Contralto / Tenor / Baixo) ----
+function voiceOn(n){
+    if(state.voiceSel==='all') return !n.dup;
+    return (n.track||0)===state.voiceSel;
+}
+// Hinos SATB na flauta doce (soprano em Dó, Dó5 a Ré7): soprano e contralto sobem 1 oitava; tenor e baixo sobem 2 oitavas;
+// depois, só as notas que ainda ficarem fora do alcance da flauta vão para a oitava mais próxima que caiba.
+function recVoiceShift(nm){
+    const k=String(nm||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+    return /^(soprano|contralto|alto)$/.test(k)?12:/^(tenor|baixo|bass)$/.test(k)?24:0;
+}
+function buildVoiceSel(names,satbDown){
+    const ids=[...new Set(state.notes.map(n=>n.track||0))].sort((a,b)=>a-b);
+    state.voiceIds=ids;
+    state.voiceNames=ids.map((id,i)=>(names&&names[id])||(ids.length===4?SATB_NAMES[i]:'Voz '+(i+1)));
+    state.shiftBy={}; ids.forEach((id,i)=>{ const k=satbDown?recVoiceShift(state.voiceNames[i]):0; if(k) state.shiftBy[id]=k; });
+    state.shiftIds=Object.keys(state.shiftBy).map(Number);
+    if(state.voiceSel!=='all'&&!ids.includes(state.voiceSel)) state.voiceSel='all';
+    const sel=document.getElementById('voiceSel');
+    sel.innerHTML='<option value="all">Todas as vozes</option>'+ids.map((id,i)=>`<option value="${id}">${state.voiceNames[i]}${state.shiftBy[id]?' (+'+(state.shiftBy[id]/12)+(state.shiftBy[id]===12?' oitava)':' oitavas)'):''}</option>`).join('');
+    sel.value=String(state.voiceSel);
+    document.getElementById('voiceCtl').style.display=ids.length>1?'flex':'none';
+}
+document.getElementById('voiceSel').addEventListener('change',e=>{
+    state.voiceSel=e.target.value==='all'?'all':parseInt(e.target.value);
+    if(state.isPlaying) seekTo(state.currentTime); else drawScene();
+});
+
+// ---- biblioteca de hinos (pasta hinos/ com index.json) ----
+let HINOS=null;
+const normTxt=t=>String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function renderHinos(){
+    const q=normTxt(document.getElementById('hinoQ').value).trim(), box=document.getElementById('hinoList');
+    box.innerHTML='';
+    if(!HINOS){ box.textContent=location.protocol==='file:'?'A biblioteca precisa de um endereço http. Abra o app pelo GitHub Pages ou rode um servidor local (python3 -m http.server) na pasta do projeto e acesse http://localhost:8000.':'Não foi possível carregar a lista de hinos.'; return; }
+    const list=HINOS.filter(h=>!q||String(h.n).padStart(3,'0').includes(q.replace(/^0+(?=\d)/,''))||String(h.n)===q||normTxt(h.t).includes(q));
+    if(!list.length){ box.textContent='Nenhum hino encontrado.'; return; }
+    const fr=document.createDocumentFragment();
+    list.forEach(h=>{ const b=document.createElement('button'); b.className='hino-item'; b.innerHTML='<b>'+String(h.n).padStart(3,'0')+'</b><span></span>'; b.lastChild.textContent=h.t; b.onclick=()=>openHino(h); fr.appendChild(b); });
+    box.appendChild(fr);
+}
+async function openHinos(){
+    const m=document.getElementById('mHinos'); m.hidden=false; document.body.style.overflow='hidden';
+    if(!HINOS){ try{ HINOS=await (await fetch('hinos/index.json')).json(); }catch(e){ HINOS=null; } }
+    renderHinos(); document.getElementById('hinoQ').focus();
+}
+async function openHino(h){
+    document.getElementById('mHinos').hidden=true; document.body.style.overflow='';
+    loadingOverlay.classList.add('active');
+    try{
+        const r=await fetch('hinos/'+h.f); if(!r.ok) throw new Error('arquivo não encontrado');
+        switchView('player');
+        await loadBuffer(await r.arrayBuffer(),String(h.n).padStart(3,'0')+' – '+h.t);
+    }catch(e){ loadingOverlay.classList.remove('active'); toast('Erro: '+e.message); }
+}
+document.getElementById('hinosBtn').addEventListener('click',openHinos);
+document.getElementById('hinoQ').addEventListener('input',renderHinos);
+
+async function applyNotes(notes, duration, voiceNames, opts){
     notes.forEach(n=>{ n.color=gc(n.track||0); });
     state.notes=notes; state.duration=duration; state.midiLoaded=true;
+    buildVoiceSel(voiceNames, opts&&opts.satbDown);
+    // hinos SATB: leva cada voz para o alcance da flauta doce (veja recVoiceShift)
+    if(state.shiftIds.length) notes.forEach(n=>{ const k=state.shiftBy[n.track||0]; if(k){ let m=n.midi+k; while(m<REC_LO) m+=12; while(m>REC_HI) m-=12; n.midi=m; } });
     let mn=127,mx=0; notes.forEach(n=>{if(n.midi<mn)mn=n.midi;if(n.midi>mx)mx=n.midi;});
     state.lowestNote=Math.max(21,mn-2); state.highestNote=Math.min(108,mx+2);
     while(state.highestNote-state.lowestNote<23){ if(state.lowestNote>21) state.lowestNote--; if(state.highestNote<108) state.highestNote++; }
@@ -1071,7 +1410,7 @@ async function startPlayback(){
 
     // Schedule all notes relative to Transport start
     state.notes.forEach(note=>{
-        if(note.startTime<offset) return;
+        if(note.startTime<offset||!voiceOn(note)) return;
         const tStart=(note.startTime-offset)/spd;
         const dur=Math.max(0.05, note.duration/spd);
         Tone.Transport.schedule(time=>{
@@ -1158,6 +1497,7 @@ function drawScene(){
     const pps=state.pps, hl=h-2;
     const active=new Map();
     state.notes.forEach(n=>{
+        if(!voiceOn(n)) return;
         const st=hl-((n.endTime-state.currentTime)*pps);
         const sb=hl-((n.startTime-state.currentTime)*pps);
         
@@ -3301,9 +3641,9 @@ async function importFile(f){
             projName=(d.name&&String(d.name))||f.name.replace(/\.recorder\.json$|\.json$/i,'')||'Sem título'; current=null; updateName(); closeModals();
             say('Projeto importado',true); return;
         }
-        const parsed=parseMidiFile(await f.arrayBuffer());
+        const parsed=await parseAnyScore(await f.arrayBuffer());
         if(!parsed.notes.length) throw new Error('sem notas');
-        impParsed={parsed,name:f.name.replace(/\.(mid|midi)$/i,'')};
+        impParsed={parsed,name:f.name.replace(/\.(mid|midi|mxl|xml|musicxml)$/i,'')};
         const tracks=new Set(parsed.notes.map(n=>n.track)).size;
         $('impInfo').textContent=f.name+' — '+parsed.notes.length+' notas, '+tracks+' faixa'+(tracks>1?'s':'')+', '+Math.round(parsed.bpm)+' BPM, '+fmt(parsed.duration);
         $('impMode').disabled=!scoreNotes.length; if(!scoreNotes.length) $('impMode').value='replace';
@@ -3322,11 +3662,12 @@ $('impGo').onclick=()=>{
         if(!replace&&scoreNotes.length){ const M=({'4/4':4,'3/4':3,'2/4':2,'6/8':3})[$('scoreTimeSig').value]||4; const end=Math.max(...scoreNotes.map(n=>n.beat-1+n.duration)); base=Math.ceil(end/M-1e-9)*M; }
         const need=Math.min(8,trackIds.length), sn=[];
         parsed.notes.forEach(n=>{
+            if(n.dup) return;
             const beat=1+base+Math.round(n.startTime/spb/q)*q, dur=Math.max(q,Math.round(n.duration/spb/q)*q);
             sn.push({midi:Math.max(21,Math.min(108,n.midi)),beat,duration:dur,velocity:Math.max(1,Math.min(127,Math.round(n.velocity*127))),voice:vOf(n.track),accidental:0,dotted:false,dotted2:false,tied:false,articulations:[]});
         });
         const d=snapshot();
-        if(replace){ d.voices=Array.from({length:Math.max(need,1)},(_,i)=>({id:i,name:i<4?['Soprano','Alto','Tenor','Baixo'][i]:'Voz '+(i+1)})); d.notes=sn; if(useTempo) d.bpm=bpm; d.curBeat=undefined; }
+        if(replace){ d.voices=Array.from({length:Math.max(need,1)},(_,i)=>({id:i,name:i<4?(parsed.voiceNames&&parsed.voiceNames[i])||['Soprano','Alto','Tenor','Baixo'][i]:'Voz '+(i+1)})); d.notes=sn; if(useTempo) d.bpm=bpm; d.curBeat=undefined; }
         else { for(let i=d.voices.length;i<need;i++) d.voices.push({id:i,name:'Voz '+(i+1)}); d.notes=d.notes.concat(sn); d.curBeat=undefined; if(useTempo) d.bpm=bpm; }
         apply(d);
         if(replace){ projName=name||'Sem título'; current=null; updateName(); }
