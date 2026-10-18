@@ -35,6 +35,9 @@ for (const f of ['manifest.json', 'favicon-32x32.png', 'apple-touch-icon.png', '
   fs.copyFileSync(f, path.join(WWW, f));
 }
 
+// ---- Biblioteca de hinos (480 .mxl + index.json) ----
+if (fs.existsSync('hinos')) fs.cpSync('hinos', path.join(WWW, 'hinos'), { recursive: true });
+
 // ---- Tone.js e fonte Inter locais (o app funciona offline, sem CDN) ----
 const toneSrc = 'node_modules/tone/build/Tone.js';
 if (!fs.existsSync(toneSrc)) fail('Tone.js não encontrado (rode npm install).');
