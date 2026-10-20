@@ -29,7 +29,7 @@ fs.rmSync(WWW, { recursive: true, force: true });
 for (const d of ['vendor', 'fonts', 'samples/flute']) fs.mkdirSync(path.join(WWW, d), { recursive: true });
 
 // ---- Arquivos que vão para o APK ----
-for (const f of ['manifest.json', 'favicon-32x32.png', 'apple-touch-icon.png', 'icon-192x192.png', 'icon-512x512.png',
+for (const f of ['manifest.json', 'pro-config.js', 'favicon-32x32.png', 'apple-touch-icon.png', 'icon-192x192.png', 'icon-512x512.png',
                  'icon-maskable-192x192.png', 'icon-maskable-512x512.png']) {
   if (!fs.existsSync(f)) fail('Arquivo não encontrado na raiz do repositório: ' + f);
   fs.copyFileSync(f, path.join(WWW, f));
