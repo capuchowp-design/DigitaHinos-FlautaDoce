@@ -1,6 +1,6 @@
 {
-  "name": "Recorder Bounce - Visualizador MIDI",
-  "short_name": "Recorder Bounce",
+  "name": "DigitaHinos FlautaDoce - Visualizador MIDI",
+  "short_name": "DigitaHinos FlautaDoce",
   "description": "Visualizador MIDI com flauta doce animado",
   "start_url": "./index.html",
   "display": "standalone",

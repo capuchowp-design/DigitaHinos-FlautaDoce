@@ -1,4 +1,4 @@
-# Recorder Bounce
+# DigitaHinos FlautaDoce
 
 Visualizador MIDI com flauta doce soprano em Dó animada (digitação barroca/inglesa, de Dó5 a Ré7): os dedos fecham os furos (mão esquerda em vermelho, direita em verde; meio-furo do polegar e furos duplos 6 e 7 incluídos), com a pauta em clave de Sol e o compositor.
 
