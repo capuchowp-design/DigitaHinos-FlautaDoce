@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // ===== Opções =====
-const APP_NAME = 'Recorder Bounce';
+const APP_NAME = 'DigitaHinos FlautaDoce';
 const APP_SLUG = 'recorderbounce';
 const KEEP_DONATION_BUTTON = true; // coloque false para esconder o botão "PIX — Apoiar" dentro do APK
 // ==================
@@ -91,8 +91,8 @@ html = html.replace(acceptRe, '$1');
 
 // 6) Exportar (MIDI, WAV, JSON, PDF): no Android abre a folha "Compartilhar" (salvar em Arquivos/Drive, enviar...)
 replaceOnce(
-  /const url=URL\.createObjectURL\(new Blob\(\[new Uint8Array\(all\)\],\{type:'audio\/midi'\}\)\);\s*const a=document\.createElement\('a'\); a\.href=url; a\.download=\(window\.pbFileBase\?window\.pbFileBase\(\):'recorderbounce'\)\+'\.mid'; a\.click\(\);\s*URL\.revokeObjectURL\(url\);/,
-  "window.fbSaveFile((window.pbFileBase?window.pbFileBase():'recorderbounce')+'.mid',new Uint8Array(all),'audio/midi');",
+  /const url=URL\.createObjectURL\(new Blob\(\[new Uint8Array\(all\)\],\{type:'audio\/midi'\}\)\);\s*const a=document\.createElement\('a'\); a\.href=url; a\.download=\(window\.pbFileBase\?window\.pbFileBase\(\):'digitahinos-flautadoce'\)\+'\.mid'; a\.click\(\);\s*URL\.revokeObjectURL\(url\);/,
+  "window.fbSaveFile((window.pbFileBase?window.pbFileBase():'digitahinos-flautadoce')+'.mid',new Uint8Array(all),'audio/midi');",
   'exportação do MIDI');
 replaceOnce(
   /function download\(name,blob\)\{\s*const a=document\.createElement\('a'\); a\.href=URL\.createObjectURL\(blob\); a\.download=name;\s*document\.body\.append\(a\); a\.click\(\); a\.remove\(\); setTimeout\(\(\)=>URL\.revokeObjectURL\(a\.href\),2000\);\s*\}/,
