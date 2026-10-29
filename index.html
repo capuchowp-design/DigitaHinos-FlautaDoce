@@ -507,6 +507,7 @@
                     <label class="welcome-upload" for="welcomeFileInput">Carregar partitura
                         <input type="file" id="welcomeFileInput" accept=".mid,.midi,.mxl,.xml,.musicxml" style="display:none">
                     </label>
+                    <button class="welcome-compose" id="btnHinosWelcome">🎵 Hinos</button>
                     <button class="welcome-compose" onclick="switchView('score')">✏ Compor</button>
                 </div>
                 <div class="support-btns" style="margin-top:12px;">
@@ -565,6 +566,13 @@
             <span class="time-display" id="currentTime">0:00</span>
             <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
             <span class="time-display" id="totalTime">0:00</span>
+        </div>
+        <div class="speed-control" title="Tipo de flauta doce: soprano em Dó (Dó5), alto em Fá (Fá4), tenor em Dó (Dó4) ou baixo em Fá (Fá3)">
+            <span>Flauta:</span>
+            <select id="recTypeSel" aria-label="Tipo de flauta doce">
+                <option value="soprano">Soprano (Dó)</option><option value="alto">Alto (Fá)</option>
+                <option value="tenor">Tenor (Dó)</option><option value="baixo">Baixo (Fá)</option>
+            </select>
         </div>
         <div class="speed-control" id="voiceCtl" style="display:none" title="Nos hinos a 4 vozes, cada voz é levada para o alcance da flauta doce (Dó5 a Ré7)">
             <span>Voz:</span>
@@ -954,7 +962,19 @@ function parseMusicXML(text){
                 else if(t==='forward'){ cur+=nm(e,'duration',0); ext=Math.max(ext,cur); }
                 else if(t==='barline'){
                     const rp=c1(e,'repeat'); if(rp){ if(rp.getAttribute('direction')==='forward') info.fwd=true; else info.bwd=true; }
-                    const en=c1(e,'ending'); if(en){ if(en.getAttribute('type')==='start') info.endStart=(en.getAttribute('number')||'1').split(/[ ,]+/).map(s=>parseInt(s)).filter(x=>x>0); else info.endStop=true; }
+                    const en=c1(e,'ending'); if(en){
+                        if(en.getAttribute('type')==='start'){
+                            let nums=(en.getAttribute('number')||'1').split(/[ ,]+/).map(s=>parseInt(s)).filter(x=>x>0);
+                            // alguns programas gravam number="2" mas o rótulo impresso é "1.2." → vale o rótulo (senão a 1ª casa seria pulada)
+                            const lab=(en.textContent||'').trim();
+                            if(/^\d+(\s*[.,;\-–]\s*\d+)*\s*\.?$/.test(lab)){
+                                const ex=new Set();
+                                lab.replace(/\.$/,'').split(/\s*[.,;]\s*/).forEach(t=>{ const r=t.split(/\s*[\-–]\s*/).map(x=>parseInt(x)).filter(x=>x>0); if(r.length===2) for(let q=r[0];q<=r[1];q++) ex.add(q); else r.forEach(q=>ex.add(q)); });
+                                if(ex.size) nums=[...ex].sort((a,b)=>a-b);
+                            }
+                            info.endStart=nums;
+                        } else { info.endStop=true; info.endNums=(en.getAttribute('number')||'').split(/[ ,]+/).map(x=>parseInt(x)).filter(x=>x>0); }
+                    }
                 } else if(t==='note'){
                     if(c1(e,'grace')) continue;
                     const isChord=!!c1(e,'chord'), dur=nm(e,'duration',0), on=isChord?lastOn:cur;
@@ -975,7 +995,8 @@ function parseMusicXML(text){
     });
     const n=MI.length; if(!n) throw new Error('Nenhum compasso encontrado');
     const len=MI.map(m=>m.ext>1e-6?m.ext:m.nom);
-    let open=null; MI.forEach(m=>{ if(m.endStart) open=m.endStart; m.volta=open; if(m.endStop) open=null; });
+    // se a casa fecha sem ter sido aberta (falha em alguns arquivos), o próprio compasso vale como essa casa
+    let open=null; MI.forEach(m=>{ if(m.endStart) open=m.endStart; m.volta=(!open&&m.endStop&&m.endNums&&m.endNums.length)?m.endNums:open; if(m.endStop) open=null; });
     // ordem de execução (repetições e casas 1ª/2ª)
     const order=[]; { let i=0,secStart=0,pass=1,jumped=false,guard=0; const taken=new Set();
         while(i<n&&guard++<n*12){
@@ -984,7 +1005,13 @@ function parseMusicXML(text){
             jumped=false;
             if(m.volta&&!m.volta.includes(pass)){ i++; continue; }
             order.push(i);
-            if(m.bwd){ if(!taken.has(i)){ taken.add(i); i=secStart; pass++; jumped=true; continue; } secStart=i+1; pass=1; }
+            if(m.bwd){
+                if(!taken.has(i)){ taken.add(i); i=secStart; pass++; jumped=true; continue; }
+                // repetição esgotada: se logo depois vem uma casa de número maior (ex.: casa 1.2. e depois casa 3.), a passada continua contando
+                // (senão a 3ª casa — a última nota da estrofe antes do coro — era pulada). Caso contrário, começa uma seção nova.
+                const nx=MI[i+1]; secStart=i+1;
+                if(nx&&nx.endStart&&nx.endStart.some(q=>q>pass)) pass++; else pass=1;
+            }
             i++;
         } }
     if(!order.length) for(let i=0;i<n;i++) order.push(i);
@@ -1343,7 +1370,8 @@ function voiceOn(n){
 // depois, só as notas que ainda ficarem fora do alcance da flauta vão para a oitava mais próxima que caiba.
 function recVoiceShift(nm){
     const k=String(nm||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-    return /^(soprano|contralto|alto)$/.test(k)?12:/^(tenor|baixo|bass)$/.test(k)?24:0;
+    const b=/^(soprano|contralto|alto)$/.test(k)?12:/^(tenor|baixo|bass)$/.test(k)?24:0;
+    return b?Math.max(0,b-12*REC_TYPES[recType].drop):0;
 }
 function buildVoiceSel(names,satbDown){
     const ids=[...new Set(state.notes.map(n=>n.track||0))].sort((a,b)=>a-b);
@@ -1519,6 +1547,8 @@ async function openHino(h){
     }catch(e){ loadingOverlay.classList.remove('active'); toast('Erro: '+e.message); }
 }
 document.getElementById('hinosBtn').addEventListener('click',openHinos);
+document.getElementById('recTypeSel').addEventListener('change',e=>{ recSetType(e.target.value); recRetune(); });
+document.getElementById('btnHinosWelcome').addEventListener('click',openHinos);
 document.getElementById('proBtn').addEventListener('click',()=>proPaywall(''));
 document.getElementById('proClose').addEventListener('click',proClose);
 document.getElementById('mPro').addEventListener('click',e=>{ if(e.target.id==='mPro') proClose(); });
@@ -1529,9 +1559,11 @@ async function applyNotes(notes, duration, voiceNames, opts){
     state.hinoN=null;                       // só vale para hino da biblioteca (openHino marca depois)
     notes.forEach(n=>{ n.color=gc(n.track||0); });
     state.notes=notes; state.duration=duration; state.midiLoaded=true;
-    buildVoiceSel(voiceNames, opts&&opts.satbDown);
+    notes.forEach(n=>{ if(n.m0===undefined) n.m0=n.midi; });
+    state.srcNames=voiceNames; state.satbDown=!!(opts&&opts.satbDown);
+    buildVoiceSel(voiceNames, state.satbDown);
     // hinos SATB: leva cada voz para o alcance da flauta doce (veja recVoiceShift)
-    if(state.shiftIds.length) notes.forEach(n=>{ const k=state.shiftBy[n.track||0]; if(k){ let m=n.midi+k; while(m<REC_LO) m+=12; while(m>REC_HI) m-=12; n.midi=m; } });
+    if(state.satbDown) notes.forEach(n=>{ const k=state.shiftBy[n.track||0]||0; let m=n.m0+k; while(m<REC_LO) m+=12; while(m>REC_HI) m-=12; n.midi=m; });
     let mn=127,mx=0; notes.forEach(n=>{if(n.midi<mn)mn=n.midi;if(n.midi>mx)mx=n.midi;});
     state.lowestNote=Math.max(21,mn-2); state.highestNote=Math.min(108,mx+2);
     while(state.highestNote-state.lowestNote<23){ if(state.lowestNote>21) state.lowestNote--; if(state.highestNote<108) state.highestNote++; }
@@ -1734,7 +1766,17 @@ function drawGrid(w,h,hl,pps){
 // Cada nota vira um padrão [polegar, furo1 … furo7]: 0 = aberto, 1 = fechado, 't' = polegar em meio-furo.
 // Os furos 6 e 7 são duplos: 1 = só um dos dois furinhos fechado, 2 = os dois fechados. A nota soa como escrita (Dó5 … Ré7).
 const SOL=['Dó','Dó♯','Ré','Mi♭','Mi','Fá','Fá♯','Sol','Sol♯','Lá','Si♭','Si'], LET=[0,0,1,2,2,3,3,4,4,5,6,6], ACC=['','♯','','♭','','','♯','','♯','','♭',''];
-const REC_LO=72, REC_HI=98;
+// Família da flauta doce (som real; as notas aparecem como soam): a digitação barroca é a mesma em todas, só muda a altura.
+//  soprano em Dó: Dó5 · alto em Fá: Fá4 (uma quinta abaixo da soprano) · tenor em Dó: Dó4 (uma oitava abaixo da soprano) · baixo em Fá: Fá3 (uma oitava abaixo do alto)
+// off = semitons entre a nota que soa e a nota equivalente na soprano (a tabela REC_CHART é da soprano); drop = oitavas a menos nos arranjos SATB.
+const REC_TYPES={
+  soprano:{n:'soprano em Dó',   off:0,  drop:0, lo:'Dó5'},
+  alto:   {n:'alto em Fá',      off:7,  drop:0, lo:'Fá4'},
+  tenor:  {n:'tenor em Dó',     off:12, drop:1, lo:'Dó4'},
+  baixo:  {n:'baixo em Fá',     off:19, drop:1, lo:'Fá3'}
+};
+let recType='soprano'; try{ const v=localStorage.getItem('recType'); if(REC_TYPES[v]) recType=v; }catch(e){}
+let REC_OFF=REC_TYPES[recType].off, REC_LO=72-REC_OFF, REC_HI=98-REC_OFF;
 const REC_CHART={
  72:[1,1,1,1,1,1,2,2], 73:[1,1,1,1,1,1,2,1], 74:[1,1,1,1,1,1,2,0], 75:[1,1,1,1,1,1,1,0], 76:[1,1,1,1,1,1,0,0], 77:[1,1,1,1,1,0,2,2],
  78:[1,1,1,1,0,1,2,0], 79:[1,1,1,1,0,0,0,0], 80:[1,1,1,0,1,1,1,0], 81:[1,1,1,0,0,0,0,0], 82:[1,1,0,1,1,0,0,0], 83:[1,1,0,0,0,0,0,0],
@@ -1743,7 +1785,26 @@ const REC_CHART={
  96:['t',1,0,0,1,1,0,0], 97:['t',1,0,1,1,0,2,1], 98:['t',1,0,1,1,0,2,2]};
 function recPitch(m){ let w=m; while(w>REC_HI) w-=12; while(w<REC_LO) w+=12; return w; }
 function writtenOf(m){ return recPitch(m); }
-function recFinger(m){ const p=recPitch(m); return {p,h:REC_CHART[p]}; }
+function recFinger(m){ const p=recPitch(m); return {p,h:REC_CHART[p+REC_OFF]}; }
+function recSetType(t){
+    if(!REC_TYPES[t]) t='soprano'; recType=t; REC_OFF=REC_TYPES[t].off; REC_LO=72-REC_OFF; REC_HI=98-REC_OFF;
+    try{ localStorage.setItem('recType',t); }catch(e){}
+    const sel=document.getElementById('recTypeSel'); if(sel&&sel.value!==t) sel.value=t;
+    const vc=document.getElementById('voiceCtl'); if(vc) vc.title='Nos hinos a 4 vozes, cada voz é levada para o alcance da flauta doce '+REC_TYPES[t].n+' (a partir do '+REC_TYPES[t].lo+')';
+}
+// troca o tipo de flauta com um hino aberto: refaz as alturas a partir das notas originais (m0)
+function recRetune(){
+    if(!state.midiLoaded) return;
+    const playing=state.isPlaying, t=state.currentTime;
+    buildVoiceSel(state.srcNames,state.satbDown);
+    state.notes.forEach(n=>{ const k=state.shiftBy[n.track||0]||0; let m=n.m0+k; if(state.satbDown){ while(m<REC_LO) m+=12; while(m>REC_HI) m-=12; } n.midi=m; });
+    let mn=127,mx=0; state.notes.forEach(n=>{if(n.midi<mn)mn=n.midi;if(n.midi>mx)mx=n.midi;});
+    state.lowestNote=Math.max(21,mn-2); state.highestNote=Math.min(108,mx+2);
+    while(state.highestNote-state.lowestNote<23){ if(state.lowestNote>21) state.lowestNote--; if(state.highestNote<108) state.highestNote++; }
+    buildPianoKeys(); resizeCanvases();
+    if(playing) seekTo(t); else drawScene();
+}
+recSetType(recType);
 // texto no sistema tradicional: 0 = polegar, 1-7 = furos, ½ = meio-furo
 function recText(h){
     const out=[]; if(h[0]===1) out.push('0'); else if(h[0]==='t') out.push('0½');
@@ -1751,7 +1812,7 @@ function recText(h){
     return out.join(' ');
 }
 window.recText=recText;
-window.brassHead=()=>'Flauta doce soprano em Dó (digitação barroca)';
+window.brassHead=()=>'Flauta doce '+REC_TYPES[recType].n+' (digitação barroca)';
 window.brassProgram=()=>74;
 const claFX=[];
 const TREBLE_CLEF_PATH='M0.55,3.1 C-0.6,3.9 -1.4,2.9 -0.6,2.2 C0.1,1.7 1.0,2.2 0.95,2.9 L1.05,-4.2 C1.15,-5.0 1.7,-4.4 1.5,-3.4 C1.2,-2.2 -1.5,-1.6 -1.5,0.2 C-1.5,1.7 0.2,2.0 0.9,1.2 C1.7,0.3 1.5,-1.2 0.3,-1.2 C-0.7,-1.2 -0.8,0.5 0,0.8 C0.5,0.9 0.85,0.5 0.7,0.05';
@@ -3057,7 +3118,7 @@ function liveBuild(vi){
     LIVE.svgs=[]; LIVE.lay=[]; LIVE.heads=[]; LIVE.map=[]; LIVE.act=[]; LIVE.shown=null; LIVE.sys=-1; LIVE.ok=false;
     try{
         const src=playerScoreNotes();
-        const sd=withPlayerSource(()=>pbBuildScore({title:'',voice:vi,ts:playerTs(),valves:false}));
+        const sd=withPlayerSource(()=>pbBuildScore({title:'',voice:vi,ts:playerTs(),valves:true}));
         LIVE.svgs=sd.svgs; LIVE.lay=sd.lay; LIVE.heads=sd.heads; LIVE.W=sd.W;
         const pr=[]; src.forEach(n=>{ pr.push([n.t0,(n.beat-1)*8],[n.t1,(n.beat-1+n.duration)*8]); });
         pr.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
@@ -3080,7 +3141,7 @@ function liveScoreUpdate(){
     const host=liveHost();
     if(!state.midiLoaded){ host.style.display='none'; return; }
     const vi=state.voiceSel==='all'?'all':state.voiceIds.indexOf(state.voiceSel);
-    const sig=[vi,'rec',state.srcBpm,state.srcTs,state.srcPickup,state.srcKey].join('|');
+    const sig=[vi,'rec'+recType,state.srcBpm,state.srcTs,state.srcPickup,state.srcKey].join('|');
     if(LIVE.notesRef!==state.notes||LIVE.sig!==sig){ LIVE.notesRef=state.notes; LIVE.sig=sig; liveBuild(vi); }
     if(!LIVE.ok){ host.style.display='none'; return; }
     host.style.display='flex';
